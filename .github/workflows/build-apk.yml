@@ -82,7 +82,7 @@ jobs:
               "        release {\n"
               "            v1SigningEnabled true\n"
               "            v2SigningEnabled true\n"
-              "            v3SigningEnabled true\n"
+              "            enableV3Signing true\n"
               "            def waifuSigningPath = System.getenv('WAIFU_DECK_RELEASE_SIGNING')", 1)
           open(p, 'w').write(t)
           print('signing schemes forced on')
