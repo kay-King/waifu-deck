@@ -76,11 +76,41 @@ jobs:
       - name: Expo prebuild (Android)
         run: CI=1 npx expo prebuild --platform android
 
+      # AGP 8 signs the release APK without a v1 (JAR) signature unless it is
+      # asked for explicitly; apksigner then reports "Missing META-INF/MANIFEST.MF"
+      # and HarmonyOS/Huawei installers refuse the APK. Force all three schemes
+      # on the fork's signing config (inserted by the upstream plugin).
+      - name: Force v1+v2+v3 signing
+        run: |
+          python3 - <<'EOF'
+          p = 'android/app/build.gradle'
+          t = open(p).read()
+          anchor = "        release {\n            def waifuSigningPath = System.getenv('WAIFU_DECK_RELEASE_SIGNING')"
+          assert anchor in t, 'signing anchor not found in app/build.gradle'
+          t = t.replace(anchor,
+              "        release {\n"
+              "            v1SigningEnabled true\n"
+              "            v2SigningEnabled true\n"
+              "            v3SigningEnabled true\n"
+              "            def waifuSigningPath = System.getenv('WAIFU_DECK_RELEASE_SIGNING')", 1)
+          open(p, 'w').write(t)
+          print('signing schemes forced on')
+          EOF
+
       - name: arm64 only
         run: printf '\nreactNativeArchitectures=arm64-v8a\n' >> android/gradle.properties
 
       - name: Build release APK
         run: cd android && ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Inspect APK signing (diagnostic)
+        run: |
+          ls -la android/app/build/outputs/apk/release/
+          echo '--- META-INF entries ---'
+          unzip -l android/app/build/outputs/apk/release/app-release.apk | grep -E 'META-INF' || echo '(no META-INF entries)'
+          apksigner="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner | sort -V | tail -n 1)"
+          echo '--- plain apksigner verify (APK minSdk) ---'
+          "$apksigner" verify --verbose android/app/build/outputs/apk/release/app-release.apk || true
 
       # The APK must carry v1 / v2 / v3 signatures: HarmonyOS and some Huawei
       # installers only trust a v1 certificate, and report
