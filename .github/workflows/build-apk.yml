@@ -1,0 +1,130 @@
+name: Build APK (fork)
+
+# Fork build: Expo prebuild + Gradle release build, signed with the fork's
+# own keystore (repo Secrets WAIFUDECK_KEYSTORE_BASE64 /
+# WAIFUDECK_KEYSTORE_PASSWORD). The upstream signing plugin reads the
+# keystore path from WAIFU_DECK_RELEASE_SIGNING; without it the release
+# build would be unsigned. arm64 only. The APK is attached to a versioned
+# Release (v<version>-fork1) and kept as a workflow artifact.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build arm64 release APK
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Android SDK components
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('package-lock.json', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore signing keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.WAIFUDECK_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.WAIFUDECK_KEYSTORE_PASSWORD }}
+        run: |
+          test -n "$KEYSTORE_BASE64" || { echo "::error::Missing secret WAIFUDECK_KEYSTORE_BASE64"; exit 1; }
+          test -n "$KEYSTORE_PASSWORD" || { echo "::error::Missing secret WAIFUDECK_KEYSTORE_PASSWORD"; exit 1; }
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/waifudeck-sign.jks"
+          {
+            printf 'storeFile=%s\n' "$RUNNER_TEMP/waifudeck-sign.jks"
+            printf 'storePassword=%s\n' "$KEYSTORE_PASSWORD"
+            printf 'keyAlias=waifudeck\n'
+            printf 'keyPassword=%s\n' "$KEYSTORE_PASSWORD"
+          } > "$RUNNER_TEMP/release.properties"
+          echo "WAIFU_DECK_RELEASE_SIGNING=$RUNNER_TEMP/release.properties" >> "$GITHUB_ENV"
+
+      - name: Expo prebuild (Android)
+        run: CI=1 npx expo prebuild --platform android
+
+      - name: arm64 only
+        run: printf '\nreactNativeArchitectures=arm64-v8a\n' >> android/gradle.properties
+
+      - name: Build release APK
+        run: cd android && ./gradlew :app:assembleRelease --no-daemon
+
+      # The APK must carry v1 / v2 / v3 signatures: HarmonyOS and some Huawei
+      # installers only trust a v1 certificate, and report
+      # "该安装包未包含任何证书" without one. apksigner only checks v1 when
+      # minSdk < 24, so force the check with --min-sdk-version 23.
+      - name: Verify APK signature schemes
+        run: |
+          apk="android/app/build/outputs/apk/release/app-release.apk"
+          apksigner="$(find "$ANDROID_HOME/build-tools" -maxdepth 2 -name apksigner | sort -V | tail -n 1)"
+          if [[ -z "$apksigner" ]]; then
+            echo "::error::apksigner not found under $ANDROID_HOME/build-tools"
+            exit 1
+          fi
+          if ! report="$("$apksigner" verify --verbose --min-sdk-version 23 "$apk")"; then
+            echo "::error::$apk failed apksigner verify"
+            exit 1
+          fi
+          for scheme in 'v1 scheme (JAR signing)' 'v2 scheme (APK Signature Scheme v2)' 'v3 scheme (APK Signature Scheme v3)'; do
+            if ! grep -Fqx "Verified using ${scheme}: true" <<< "$report"; then
+              echo "::error::$apk is not signed with ${scheme}"
+              exit 1
+            fi
+          done
+
+      - name: Name the APK
+        run: |
+          version="$(node -p "require('./app.json').expo.version")"
+          cp android/app/build/outputs/apk/release/app-release.apk "waifudeck-${version}-fork1-arm64.apk"
+          echo "APK_NAME=waifudeck-${version}-fork1-arm64.apk" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v${version}-fork1" >> "$GITHUB_ENV"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: waifudeck-apk
+          path: ${{ env.APK_NAME }}
+          if-no-files-found: error
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: WaifuDeck fork ${{ env.RELEASE_TAG }}
+          body: |
+            Fork build with gallery sync (favorites forward to Telegram + website gallery, in-app gallery browser).
+            Signed with the fork keystore, not the upstream key — uninstall the upstream WaifuDeck app first if it is installed, or the install will fail on a signature mismatch.
+          files: ${{ env.APK_NAME }}

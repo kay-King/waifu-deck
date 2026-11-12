@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "app.waifudeck.mobile",
-      "versionCode": 1002001,
+      "versionCode": 1012001,
       "allowBackup": false,
       "blockedPermissions": [
         "android.permission.READ_EXTERNAL_STORAGE",
