@@ -80,6 +80,8 @@ describe('settings repository', () => {
       maxBytes: 5_000_000,
       prefetchDepth: 40,
       blurNsfwThumbnails: false,
+      gallerySyncEnabled: false,
+      gallerySyncUrl: 'https://gallery.suny.qzz.io',
     });
   });
 

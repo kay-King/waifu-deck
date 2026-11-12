@@ -71,9 +71,11 @@ test('header options cover every settings sub-page route', async () => {
   expect(source).toContain('name="settings/reset"');
   expect(source).toContain('name="settings/sources"');
   expect(source).toContain('name="settings/cloud"');
+  expect(source).toContain('name="settings/gallery"');
   // N7 acceptance (owner, 2026-10-13): the cloud page's nav was the last
   // old-style header — every settings sub-page shares the unified options.
-  expect(source.match(/\.\.\.u2SubpageOptions/g)).toHaveLength(4);
+  // The fork's gallery browser is the fifth sub-page using them.
+  expect(source.match(/\.\.\.u2SubpageOptions/g)).toHaveLength(5);
   // The flash fix: the options carry a native content background, not just header styling.
   expect(source).toContain('contentStyle: { backgroundColor: theme.surface }');
   expect(source).not.toMatch(/<Stack[^>]*screenOptions=\{[^}]*u2HeaderOptions/);

@@ -72,7 +72,10 @@ test.each(cases)('real Settings: title then first card, sources, one push, no cl
   expect(screen.queryByTestId('byos-section')).toBeNull();
   expect(screen.queryByTestId('byos-unlock')).toBeNull();
   expect(screen.queryByTestId('byos-reauth')).toBeNull();
-  expect(screen.container.queryAll((node) => node.props.secureTextEntry !== undefined || node.props.onChangeText !== undefined)).toHaveLength(0);
+  // No cloud credential inputs here. The fork's gallery-sync URL/passphrase
+  // inputs are a separate feature on the same screen, not cloud controls.
+  expect(screen.container.queryAll((node) => (node.props.secureTextEntry !== undefined || node.props.onChangeText !== undefined)
+    && !String(node.props.testID ?? '').startsWith('settings-gallery-sync-'))).toHaveLength(0);
   expect(screen.queryByText('Cloud sync')).toBeNull();
   await userEvent.press(screen.getByTestId('settings-cloud-card'));
   expect(mockPush.mock.calls).toEqual([['/settings/cloud']]);
