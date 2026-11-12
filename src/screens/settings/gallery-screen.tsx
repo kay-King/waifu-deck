@@ -134,6 +134,9 @@ export function GalleryScreen(): ReactElement {
   const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [selected, setSelected] = useState<GalleryBrowserItem | null>(null);
+  // The base URL lives in a ref for the async loaders and is mirrored into
+  // state for rendering (refs must not be read during render).
+  const [baseUrl, setBaseUrl] = useState<string | null>(null);
   const passphraseRef = useRef<string | null>(null);
   const baseUrlRef = useRef<string | null>(null);
   const loadedRef = useRef(0);
@@ -175,6 +178,7 @@ export function GalleryScreen(): ReactElement {
         return;
       }
       baseUrlRef.current = baseUrl;
+      setBaseUrl(baseUrl);
       const passphrase = await gallerySync.loadPassphrase().catch(() => null);
       if (cancelled) return;
       if (passphrase === null) {
@@ -266,12 +270,12 @@ export function GalleryScreen(): ReactElement {
     );
   }
 
-  const baseUrl = baseUrlRef.current ?? '';
+  const baseUrlForRender = baseUrl ?? '';
   const detailImage = selected === null
     ? null
     : selected.kind === 'video' && selected.preview
-      ? galleryProxyUrl(baseUrl, selected.preview)
-      : galleryImageUrls(baseUrl, selected.fid).full;
+      ? galleryProxyUrl(baseUrlForRender, selected.preview)
+      : galleryImageUrls(baseUrlForRender, selected.fid).full;
 
   return (
     <View testID="gallery-screen" style={{ flex: 1, backgroundColor: theme.surface }}>
@@ -300,7 +304,7 @@ export function GalleryScreen(): ReactElement {
           renderItem={({ item }) => (
             <GalleryTile
               item={item}
-              baseUrl={baseUrl}
+              baseUrl={baseUrlForRender}
               blurNsfw={settings.blurNsfwThumbnails}
               onOpen={() => setSelected(item)}
             />
@@ -363,7 +367,7 @@ export function GalleryScreen(): ReactElement {
                 ) : null}
                 <Pressable
                   testID="gallery-detail-open-original"
-                  onPress={() => openLink(selected.orig || galleryImageUrls(baseUrl, selected.fid).full)}
+                  onPress={() => openLink(selected.orig || galleryImageUrls(baseUrlForRender, selected.fid).full)}
                   style={{ paddingVertical: 10 }}>
                   <Text style={{ color: theme.save, fontSize: 14 }}>{t('gallery.openOriginal')}</Text>
                 </Pressable>

@@ -49,6 +49,14 @@ export function GallerySyncSection({
   const { t } = useAppTranslation();
   const router = useRouter();
   const [urlDraft, setUrlDraft] = useState(settings.gallerySyncUrl);
+  const [prevSyncUrl, setPrevSyncUrl] = useState(settings.gallerySyncUrl);
+  // Sync the draft when the saved URL changes from elsewhere (e.g. another
+  // screen saved it). Adjusting state during render is the supported
+  // pattern for this; an effect would trigger cascading renders.
+  if (settings.gallerySyncUrl !== prevSyncUrl) {
+    setPrevSyncUrl(settings.gallerySyncUrl);
+    setUrlDraft(settings.gallerySyncUrl);
+  }
   const [savingUrl, setSavingUrl] = useState(false);
   const [passphrase, setPassphrase] = useState('');
   const [hasPassphrase, setHasPassphrase] = useState(false);
@@ -58,10 +66,6 @@ export function GallerySyncSection({
   const internalHair = (
     <View style={{ borderTopWidth: 1, borderTopColor: theme.hair }} />
   );
-
-  useEffect(() => {
-    setUrlDraft(settings.gallerySyncUrl);
-  }, [settings.gallerySyncUrl]);
 
   useEffect(() => {
     if (gallerySync == null) return;
