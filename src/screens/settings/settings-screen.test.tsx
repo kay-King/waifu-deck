@@ -359,6 +359,7 @@ describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, p
       ...(allowsAdultContent ? ['backup-restore'] : []),
       'settings-gallery-sync-toggle', 'settings-gallery-sync-toggle-switch',
       'settings-gallery-sync-url', 'settings-gallery-sync-url-save',
+      'settings-gallery-sync-browse',
       'settings-language', 'settings-reset-entry', 'settings-version'];
     const markers = new Map(ids.map((id) => [screen.getByTestId(id), id]));
     headings.forEach((node, index) => markers.set(node, ['discover-heading', 'phone-heading', 'gallery-sync-heading', 'general-heading'][index]!));
@@ -369,6 +370,7 @@ describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, p
       ...(allowsAdultContent ? ['backup-restore'] : []), 'gallery-sync-heading',
       'settings-gallery-sync-toggle', 'settings-gallery-sync-toggle-switch',
       'settings-gallery-sync-url', 'settings-gallery-sync-url-save',
+      'settings-gallery-sync-browse',
       'general-heading', 'settings-language', 'settings-reset-entry', 'settings-version']);
     const hosts = root.queryAll((node) => typeof node.type === 'string');
     const allIds = hosts.map((node) => node.props.testID).filter((id) => typeof id === 'string');

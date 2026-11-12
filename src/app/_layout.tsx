@@ -147,6 +147,10 @@ export default function RootLayout() {
                     name="settings/reset"
                     options={{ ...u2SubpageOptions, title: t('settings.reset.title'), presentation: 'card' }}
                   />
+                  <Stack.Screen
+                    name="settings/gallery"
+                    options={{ ...u2SubpageOptions, title: t('settings.gallerySync.browse'), presentation: 'card' }}
+                  />
                 </Stack>
               </AppUpdateHost>
             </ByosCloudLibraryProvider>

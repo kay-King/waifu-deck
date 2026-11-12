@@ -43,9 +43,11 @@ export type GalleryRating =
  * One gallery index/favorite entry's plaintext metadata — the same shape the
  * website's discover favorite sends (see the Worker's /api/fav `add`).
  * `tags` is a space-joined string (at most 12 tags), matching the website.
+ * Video entries (sent by the VM sender) carry the extra optional fields;
+ * `dur` is the video length in seconds, `size` the file size in bytes.
  */
 export type GalleryEntryMeta = Readonly<{
-  kind: 'photo';
+  kind: 'photo' | 'video';
   source: string;
   pid: string;
   page: string | null;
@@ -56,6 +58,10 @@ export type GalleryEntryMeta = Readonly<{
   h: number;
   rating: GalleryRating;
   orig: string;
+  preview?: string;
+  video_url?: string;
+  size?: number;
+  dur?: number;
 }>;
 
 export function deriveGalleryKey(passphrase: string): Uint8Array {

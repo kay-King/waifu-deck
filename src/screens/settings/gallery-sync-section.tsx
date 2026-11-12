@@ -1,3 +1,4 @@
+import { useRouter, type Href } from 'expo-router';
 import { useEffect, useState, type ReactElement } from 'react';
 import { Text, View } from 'react-native';
 
@@ -46,6 +47,7 @@ export function GallerySyncSection({
 }: GallerySyncSectionProps): ReactElement {
   const theme = useAppThemeColors();
   const { t } = useAppTranslation();
+  const router = useRouter();
   const [urlDraft, setUrlDraft] = useState(settings.gallerySyncUrl);
   const [savingUrl, setSavingUrl] = useState(false);
   const [passphrase, setPassphrase] = useState('');
@@ -197,6 +199,14 @@ export function GallerySyncSection({
           )}
         </>
       )}
+      {internalHair}
+      <SettingsRow
+        testID="settings-gallery-sync-browse"
+        label={t('settings.gallerySync.browse')}
+        detail={t('settings.gallerySync.browseDetail')}
+        chevron
+        onPress={() => router.push('/settings/gallery' as Href)}
+      />
     </>
   );
 }
