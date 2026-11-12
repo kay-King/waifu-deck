@@ -78,6 +78,11 @@ import {
   type ProviderCredentialMap,
   type ProviderCredentialStore,
 } from '@/features/providers/provider-credentials';
+import { forwardCollectedImageToGallery } from '@/features/gallery-sync/gallery-forward';
+import {
+  createGalleryPassphraseStore,
+  type GalleryPassphraseStore,
+} from '@/features/gallery-sync/gallery-passphrase';
 import {
   createProviderRequestGovernor,
   type ProviderRequestGovernor,
@@ -155,6 +160,12 @@ export type AppServiceResources = {
    */
   providerCredentialStore?: ProviderCredentialStore;
   providerCredentialMap?: ProviderCredentialMap;
+  /**
+   * Gallery sync (fork addition): the secure store holding the gallery
+   * passphrase. Absent in a bare test bundle — the bundle builds a real one
+   * and only touches it when a forward runs or the settings screen asks.
+   */
+  galleryPassphraseStore?: GalleryPassphraseStore;
 };
 
 const UNCONFIGURED_BYOS: ByosStatus = { status: 'unconfigured' };
@@ -272,8 +283,25 @@ export type AppServiceBundle = AppServiceResources & {
   managedPreviewCache: ManagedPreviewCache;
   providerRequestGovernor: ProviderRequestGovernor;
   providerCredentials: ProviderCredentialService;
+  /**
+   * Gallery sync (fork addition): the passphrase side of the settings
+   * section. The enable flag and gallery URL live in AppSettings; the
+   * passphrase lives in the secure store only.
+   */
+  gallerySync: GallerySyncService;
   startupRecovery?: Promise<boolean>;
   closeDatabase?: () => Promise<void>;
+};
+
+/**
+ * Gallery sync (fork addition): load/save/clear for the gallery passphrase.
+ * The forward itself runs inside the collection's `onOriginalReady` and is
+ * not exposed — screens only manage the passphrase.
+ */
+export type GallerySyncService = {
+  loadPassphrase(): Promise<string | null>;
+  savePassphrase(passphrase: string): Promise<void>;
+  clearPassphrase(): Promise<void>;
 };
 
 /**
@@ -344,6 +372,16 @@ export function createAppServiceBundle(
     async clear(key) {
       providerCredentialMap = await providerCredentialStore.clear(key);
     },
+  };
+  // Gallery sync (fork addition): the passphrase store behind a thin service.
+  // The forward reads the passphrase fresh on every save, so a key saved or
+  // cleared mid-session takes effect immediately — no live ref to refresh.
+  const galleryPassphraseStore = resources.galleryPassphraseStore
+    ?? createGalleryPassphraseStore();
+  const gallerySync: GallerySyncService = {
+    loadPassphrase: () => galleryPassphraseStore.load(),
+    savePassphrase: (passphrase) => galleryPassphraseStore.save(passphrase),
+    clearPassphrase: () => galleryPassphraseStore.clear(),
   };
   const createProviderFetcher = factories.createProviderFetcher ?? (() => {
     const e2eRuntime = configuredE2eRuntimeConfig();
@@ -438,6 +476,14 @@ export function createAppServiceBundle(
     coordinator: resetCoordinator,
     onOriginalReady: (event) => {
       currentLibrary().libraryController?.onCollectedOriginalReady(event);
+      // Gallery sync (fork addition): alongside the library ingest, forward
+      // a fresh save to Telegram + the website gallery. Fire-and-forget —
+      // the forward never throws and never touches the local save.
+      void forwardCollectedImageToGallery(event.imageId, {
+        images: resources.imageRepository,
+        settings: () => resources.settingsRepository.load(),
+        passphrase: () => galleryPassphraseStore.load(),
+      }).catch(() => undefined);
     },
     // Board #27 (spec §5.4): 收藏 delete and 回到发现 free this phone's copy.
     // Fire-and-forget: the row has already left, and the resume sweep finishes
@@ -627,6 +673,7 @@ export function createAppServiceBundle(
     managedPreviewCache,
     providerRequestGovernor,
     providerCredentials,
+    gallerySync,
   };
 }
 

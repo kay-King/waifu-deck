@@ -29,9 +29,11 @@ import { useAppTranslation } from '@/i18n/use-app-translation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   useAppServices,
+  type GallerySyncService,
   type UpdateAppSettings,
 } from '@/providers/app-services';
 import { formatBytes } from '@/screens/settings/format-bytes';
+import { GallerySyncSection } from '@/screens/settings/gallery-sync-section';
 import { PersistedSwitch } from '@/screens/settings/setting-row';
 import {
   ChoiceModal,
@@ -88,6 +90,12 @@ export type SettingsViewProps = {
   createFullBackup(): Promise<BackupSummary>;
   restoreFullBackup(): Promise<RestoreSummary | null>;
   /**
+   * Gallery sync (fork addition): the passphrase side of the gallery sync
+   * section. Absent in bare test renders — the toggle and URL still work;
+   * only the passphrase rows are hidden.
+   */
+  gallerySync?: GallerySyncService | null;
+  /**
    * R8.21: device top inset. The four tabs are headerless (R8.17), so each
    * surface clears the status bar/cutout itself. Defaults to the live inset;
    * overridable for tests.
@@ -105,6 +113,7 @@ export function SettingsView({
   clearPreviewCache,
   createFullBackup,
   restoreFullBackup,
+  gallerySync,
   safeAreaTop,
 }: SettingsViewProps) {
   const theme = useAppThemeColors();
@@ -257,6 +266,16 @@ export function SettingsView({
             detail={t('settings.backup.restoreDetail')} disabled={busy} chevron
             onPress={() => setRestoreVisible(true)} /> : null}
         </SettingsGroup>
+        <SectionHeading>{t('settings.sections.gallerySync')}</SectionHeading>
+        <SettingsGroup style={{ marginHorizontal: metrics.settingsGutter }}>
+          <GallerySyncSection
+            settings={settings}
+            busy={busy}
+            gallerySync={gallerySync ?? null}
+            onSave={save}
+            onNotice={(message) => setNotice(message)}
+          />
+        </SettingsGroup>
         <SectionHeading>{t('settings.sections.general')}</SectionHeading>
         <SettingsGroup style={{ marginHorizontal: metrics.settingsGutter }}>
           <SettingsRow testID="settings-language" label={t('language.label')} value={languageLabel}
@@ -386,6 +405,7 @@ export function SettingsScreen() {
     createFullBackup,
     restoreFullBackup,
     libraryChanges,
+    gallerySync,
   } = useAppServices();
   const queryClient = useQueryClient();
   const previewStorage = useQuery({
@@ -462,6 +482,7 @@ export function SettingsScreen() {
       }}
       createFullBackup={createFullBackup}
       restoreFullBackup={restoreFullBackup}
+      gallerySync={gallerySync}
     />
   );
 }

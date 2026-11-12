@@ -26,6 +26,8 @@ const adultSettings: AppSettings = {
   maxBytes: 0,
   prefetchDepth: 40,
   blurNsfwThumbnails: false,
+  gallerySyncEnabled: false,
+  gallerySyncUrl: 'https://gallery.suny.qzz.io',
 };
 
 test('fails closed to the Store policy for missing and unknown variants', () => {

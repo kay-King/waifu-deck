@@ -74,6 +74,14 @@ export type AppSettings = {
   maxBytes: MaximumBytes;
   prefetchDepth: PrefetchDepth;
   blurNsfwThumbnails: boolean;
+  /**
+   * Gallery sync (fork addition): when true and a gallery passphrase is
+   * saved in the secure store, a fresh discover save is forwarded to the
+   * user's Telegram private chat and recorded in the website gallery via
+   * the gallery Worker. The passphrase itself is never part of settings.
+   */
+  gallerySyncEnabled: boolean;
+  gallerySyncUrl: string;
 };
 
 export type ImageCandidate = {

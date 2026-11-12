@@ -322,13 +322,13 @@ describe.each(summaryLocales)('$language Discover home summary', (locale) => {
 });
 
 const homeLocales = [
-  ['en', 'Settings', 'Discover', 'This phone', 'General'],
-  ['ja', '設定', '見つける', 'このスマートフォン', '一般'],
-  ['zh-Hans', '设置', '发现', '这台手机', '通用'],
-  ['zh-Hant', '設定', '探索', '這台手機', '一般'],
+  ['en', 'Settings', 'Discover', 'This phone', 'Telegram gallery', 'General'],
+  ['ja', '設定', '見つける', 'このスマートフォン', 'Telegram ギャラリー', '一般'],
+  ['zh-Hans', '设置', '发现', '这台手机', 'Telegram 画廊', '通用'],
+  ['zh-Hant', '設定', '探索', '這台手機', 'Telegram 畫廊', '一般'],
 ] as const;
 
-describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, phone, general) => {
+describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, phone, gallerySync, general) => {
   test.each([
     ['light', true], ['light', false], ['dark', true], ['dark', false],
   ] as const)('host preorder, unique IDs and exact home geometry (%s, adult=%s)', async (scheme, allowsAdultContent) => {
@@ -348,7 +348,7 @@ describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, p
     expect(card).toHaveStyle({ marginHorizontal: 14 });
     const cardStyle = ReactNative.StyleSheet.flatten(card.props.style);
     for (const key of ['margin', 'marginTop', 'marginBottom', 'marginVertical']) expect(cardStyle[key]).toBeUndefined();
-    const headings = [discover, phone, general].map((text) => screen.getByText(text));
+    const headings = [discover, phone, gallerySync, general].map((text) => screen.getByText(text));
     for (const heading of headings) {
       expect(heading).toHaveStyle({ ...settingsTypography.groupLabel, color: theme.textSecondary,
         paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 });
@@ -356,14 +356,20 @@ describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, p
     const ids = ['settings-title', 'settings-cloud-card', 'settings-sources-entry',
       ...(allowsAdultContent ? ['settings-adult-content-mode', 'settings-blur-nsfw'] : []),
       'settings-exclude-tags', 'settings-discover-entry', 'storage-panel', 'settings-backup-export',
-      ...(allowsAdultContent ? ['backup-restore'] : []), 'settings-language', 'settings-reset-entry', 'settings-version'];
+      ...(allowsAdultContent ? ['backup-restore'] : []),
+      'settings-gallery-sync-toggle', 'settings-gallery-sync-toggle-switch',
+      'settings-gallery-sync-url', 'settings-gallery-sync-url-save',
+      'settings-language', 'settings-reset-entry', 'settings-version'];
     const markers = new Map(ids.map((id) => [screen.getByTestId(id), id]));
-    headings.forEach((node, index) => markers.set(node, ['discover-heading', 'phone-heading', 'general-heading'][index]!));
+    headings.forEach((node, index) => markers.set(node, ['discover-heading', 'phone-heading', 'gallery-sync-heading', 'general-heading'][index]!));
     const actual = scroll.queryAll((node) => typeof node.type === 'string' && markers.has(node)).map((node) => markers.get(node));
     expect(actual).toEqual(['settings-title', 'settings-cloud-card', 'discover-heading', 'settings-sources-entry',
       ...(allowsAdultContent ? ['settings-adult-content-mode', 'settings-blur-nsfw'] : []),
       'settings-exclude-tags', 'settings-discover-entry', 'phone-heading', 'storage-panel', 'settings-backup-export',
-      ...(allowsAdultContent ? ['backup-restore'] : []), 'general-heading', 'settings-language', 'settings-reset-entry', 'settings-version']);
+      ...(allowsAdultContent ? ['backup-restore'] : []), 'gallery-sync-heading',
+      'settings-gallery-sync-toggle', 'settings-gallery-sync-toggle-switch',
+      'settings-gallery-sync-url', 'settings-gallery-sync-url-save',
+      'general-heading', 'settings-language', 'settings-reset-entry', 'settings-version']);
     const hosts = root.queryAll((node) => typeof node.type === 'string');
     const allIds = hosts.map((node) => node.props.testID).filter((id) => typeof id === 'string');
     expect(new Set(allIds).size).toBe(allIds.length);
@@ -379,8 +385,10 @@ describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, p
     }
     const sources = screen.getByTestId('settings-sources-entry');
     const languageRow = screen.getByTestId('settings-language');
+    const gallerySyncToggle = screen.getByTestId('settings-gallery-sync-toggle');
     const panel = screen.getByTestId('storage-panel');
-    const groups = [sources.parent!.parent!, panel.parent!.parent!.parent!, languageRow.parent!.parent!];
+    const groups = [sources.parent!.parent!, panel.parent!.parent!.parent!,
+      gallerySyncToggle.parent!.parent!, languageRow.parent!.parent!];
     for (const group of groups) {
       expect(group).toHaveStyle({ marginHorizontal: 14, borderRadius: 14, borderWidth: 1,
         borderColor: theme.border, backgroundColor: theme.surfaceSecondary, overflow: 'hidden' });
@@ -389,7 +397,7 @@ describe.each(homeLocales)('%s U1b home assembly', (language, title, discover, p
     expect(panel.parent!.children).toEqual([panel]);
     const content = scroll.children[0];
     if (typeof content !== 'object') throw new Error('Settings scroll has no host content');
-    expect(content.children).toEqual([pageTitle, card, headings[0], groups[0], headings[1], groups[1], headings[2], groups[2], version]);
+    expect(content.children).toEqual([pageTitle, card, headings[0], groups[0], headings[1], groups[1], headings[2], groups[2], headings[3], groups[3], version]);
     expect(version).toHaveTextContent(`${i18n.t('settings.footer.version')} · 1.0.0`, { exact: true });
     expect(version).toHaveStyle({ ...settingsTypography.footer, color: theme.textSecondary,
       textAlign: 'center', marginTop: 22, marginBottom: 4 });

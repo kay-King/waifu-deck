@@ -7,6 +7,7 @@
     "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
     "@expo-google-fonts/nunito": "^0.4.2",
     "@expo/ui": "~56.0.26",
+    "@noble/ciphers": "^2.4.0",
     "@noble/hashes": "2.2.0",
     "@react-native-community/slider": "5.2.0",
     "@react-native-segmented-control/segmented-control": "2.5.7",
@@ -97,7 +98,7 @@
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble/hashes))",
+      "/node_modules/(?!(.pnpm|react-native|@react-native|@react-native-community|expo|@expo|@expo-google-fonts|react-navigation|@react-navigation|@sentry/react-native|native-base|standard-navigation|@noble/(hashes|ciphers)))",
       "/node_modules/react-native-reanimated/plugin/",
       "/node_modules/@react-native/babel-preset/"
     ],

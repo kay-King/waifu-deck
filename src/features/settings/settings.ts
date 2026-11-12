@@ -19,6 +19,9 @@ import {
 
 export type { AppSettings } from '../waifu/types';
 
+/** The default gallery Worker base URL for gallery sync. */
+export const DEFAULT_GALLERY_SYNC_URL = 'https://gallery.suny.qzz.io';
+
 export const DEFAULT_SETTINGS: AppSettings = {
   version: 5,
   language: 'system',
@@ -47,6 +50,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   maxBytes: 0,
   prefetchDepth: 40,
   blurNsfwThumbnails: true,
+  gallerySyncEnabled: false,
+  gallerySyncUrl: DEFAULT_GALLERY_SYNC_URL,
 };
 
 export function setProviderEnabled(
@@ -203,7 +208,18 @@ export function normalizeSettings(
       typeof candidate.blurNsfwThumbnails === 'boolean'
         ? candidate.blurNsfwThumbnails
         : DEFAULT_SETTINGS.blurNsfwThumbnails,
+    gallerySyncEnabled:
+      typeof candidate.gallerySyncEnabled === 'boolean'
+        ? candidate.gallerySyncEnabled
+        : DEFAULT_SETTINGS.gallerySyncEnabled,
+    gallerySyncUrl: normalizeGallerySyncUrl(candidate.gallerySyncUrl),
   }, policy);
+}
+
+function normalizeGallerySyncUrl(value: unknown): string {
+  if (typeof value !== 'string') return DEFAULT_GALLERY_SYNC_URL;
+  const trimmed = value.trim().replace(/\/+$/u, '');
+  return /^https?:\/\//u.test(trimmed) ? trimmed : DEFAULT_GALLERY_SYNC_URL;
 }
 
 export function discoverySettingsIdentity(settings: AppSettings): string {
