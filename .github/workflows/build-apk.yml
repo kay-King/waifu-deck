@@ -5,7 +5,7 @@ name: Build APK (fork)
 # WAIFUDECK_KEYSTORE_PASSWORD). The upstream signing plugin reads the
 # keystore path from WAIFU_DECK_RELEASE_SIGNING; without it the release
 # build would be unsigned. arm64 only. The APK is attached to a versioned
-# Release (v<version>-fork1) and kept as a workflow artifact.
+# Release (v<version>-fork2) and kept as a workflow artifact.
 
 on:
   workflow_dispatch:
@@ -129,9 +129,9 @@ jobs:
       - name: Name the APK
         run: |
           version="$(node -p "require('./app.json').expo.version")"
-          cp android/app/build/outputs/apk/release/app-release.apk "waifudeck-${version}-fork1-arm64.apk"
-          echo "APK_NAME=waifudeck-${version}-fork1-arm64.apk" >> "$GITHUB_ENV"
-          echo "RELEASE_TAG=v${version}-fork1" >> "$GITHUB_ENV"
+          cp android/app/build/outputs/apk/release/app-release.apk "waifudeck-${version}-fork2-arm64.apk"
+          echo "APK_NAME=waifudeck-${version}-fork2-arm64.apk" >> "$GITHUB_ENV"
+          echo "RELEASE_TAG=v${version}-fork2" >> "$GITHUB_ENV"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
