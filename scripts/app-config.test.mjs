@@ -30,15 +30,17 @@ function evaluateAppConfig(overrides) {
 }
 
 function assertFullDistribution(config) {
-  assert.equal(config.name, 'Waifu Deck');
+  // Fork identity: this fork installs alongside the upstream app, so it
+  // carries its own name and package/bundle ids.
+  assert.equal(config.name, 'Waifu Deck Fork');
   // P12-D Task 10 (spec §4.3 补裁 4, 14 route A): the Google OAuth redirect is
   // the iOS app client's reverse client id, registered as a second scheme.
   assert.deepEqual(config.scheme, [
     'waifudeck',
     'com.googleusercontent.apps.550668815694-769sb0u8q37u6cc8ha4pb00bjs6808ec',
   ]);
-  assert.equal(config.android.package, 'app.waifudeck.mobile');
-  assert.equal(config.ios.bundleIdentifier, 'app.waifudeck.mobile');
+  assert.equal(config.android.package, 'app.waifudeck.mobile.fork');
+  assert.equal(config.ios.bundleIdentifier, 'app.waifudeck.mobile.fork');
   assert.ok(
     config.plugins.includes('expo-background-task'),
     'expo-background-task must always be configured',

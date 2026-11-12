@@ -10,7 +10,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/images/waifu-deck-icon.png",
-      "bundleIdentifier": "app.waifudeck.mobile"
+      "bundleIdentifier": "app.waifudeck.mobile.fork"
     },
     "android": {
       "package": "app.waifudeck.mobile.fork",
